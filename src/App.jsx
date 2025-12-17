@@ -670,8 +670,8 @@ const MenuScreen = ({ modules, launchModule, onViewModule, onStartCustom, userSt
             {/* Hero / Daily Goal Section */}
             <div className="w-full max-w-sm bg-emerald-500 text-white p-6 rounded-3xl shadow-lg shadow-emerald-200 mb-2 flex items-center justify-between relative overflow-hidden group hover:scale-[1.02] transition-transform cursor-default flex-shrink-0">
                 <div className="relative z-10">
-                    <div className="text-emerald-100 text-xs font-bold uppercase tracking-wider mb-1">Total Reviews</div>
-                    <div className="text-3xl font-bold">{userStats.totalReviews}</div>
+                    <div className="text-emerald-100 text-xs font-bold uppercase tracking-wider mb-1">Kanji Learned</div>
+                    <div className="text-3xl font-bold">{userStats.learnedCharacters ? userStats.learnedCharacters.size : 0}</div>
                     <div className="text-emerald-50 text-sm font-medium">Accuracy: {userStats.totalReviews > 0 ? Math.round((userStats.correctReviews / userStats.totalReviews) * 100) : 0}%</div>
                 </div>
 
@@ -1319,6 +1319,18 @@ export default function App() {
     };
 
     const nextCard = () => {
+        // Track the current character as learned when moving to next card
+        if (currentItem && (phase === 'study' || phase === 'flashcards')) {
+            setUserStats(prev => {
+                const newLearnedChars = new Set(prev.learnedCharacters);
+                newLearnedChars.add(currentItem.char);
+                return {
+                    ...prev,
+                    learnedCharacters: newLearnedChars
+                };
+            });
+        }
+
         if (currentIndex < activeModule.kanji.length - 1) {
             setCurrentIndex(c => c + 1);
             setRevealAnswer(false);
@@ -1338,16 +1350,40 @@ export default function App() {
         const currentKanji = activeModule.kanji[currentIndex];
         setResults(prev => [...prev, { char: currentKanji.char, correct }]);
         if (correct) setScore(s => s + 1);
+
+        // Track character as learned in test mode
+        setUserStats(prev => {
+            const newLearnedChars = new Set(prev.learnedCharacters);
+            newLearnedChars.add(currentKanji.char);
+            return {
+                ...prev,
+                learnedCharacters: newLearnedChars
+            };
+        });
+
         nextCard();
     };
 
     const [userStats, setUserStats] = useState(() => {
         const saved = localStorage.getItem('kanjiQuestStats');
-        return saved ? JSON.parse(saved) : { totalReviews: 0, correctReviews: 0, modulesCompleted: 0 };
+        if (saved) {
+            const parsed = JSON.parse(saved);
+            // Convert learnedCharacters array back to Set
+            return {
+                ...parsed,
+                learnedCharacters: new Set(parsed.learnedCharacters || [])
+            };
+        }
+        return { totalReviews: 0, correctReviews: 0, modulesCompleted: 0, learnedCharacters: new Set() };
     });
 
     useEffect(() => {
-        localStorage.setItem('kanjiQuestStats', JSON.stringify(userStats));
+        // Convert Set to Array for JSON serialization
+        const statsToSave = {
+            ...userStats,
+            learnedCharacters: Array.from(userStats.learnedCharacters)
+        };
+        localStorage.setItem('kanjiQuestStats', JSON.stringify(statsToSave));
     }, [userStats]);
 
     // Handle Module Completion & Stats Update
@@ -1355,11 +1391,16 @@ export default function App() {
         const score = results.filter(r => r.correct).length;
         const total = activeModule.kanji.length;
 
+        // Track all unique characters from this module
+        const newLearnedChars = new Set(userStats.learnedCharacters);
+        activeModule.kanji.forEach(k => newLearnedChars.add(k.char));
+
         // Update stats
         setUserStats(prev => ({
             totalReviews: prev.totalReviews + total,
             correctReviews: prev.correctReviews + score,
-            modulesCompleted: prev.modulesCompleted + 1
+            modulesCompleted: prev.modulesCompleted + 1,
+            learnedCharacters: newLearnedChars
         }));
 
         setPhase('summary');
