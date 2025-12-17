@@ -401,7 +401,7 @@ const StatsModal = ({ stats, onClose }) => {
 // --- Component: Settings Modal ---
 const SettingsModal = ({ onClose }) => {
     const [voices, setVoices] = useState([]);
-    const [selectedVoiceURI, setSelectedVoiceURI] = useState(localStorage.getItem('kanjicraft_voice_uri') || '');
+    const [selectedVoiceURI, setSelectedVoiceURI] = useState(localStorage.getItem('strokes_voice_uri') || '');
 
     useEffect(() => {
         const loadVoices = () => {
@@ -411,7 +411,7 @@ const SettingsModal = ({ onClose }) => {
             setVoices(jpVoices);
 
             // Auto-select Google voice if no preference is set (Standardizing on Google)
-            if (!localStorage.getItem('kanjicraft_voice_uri')) {
+            if (!localStorage.getItem('strokes_voice_uri')) {
                 const google = jpVoices.find(v => v.name.includes("Google"));
                 if (google) {
                     setSelectedVoiceURI(google.voiceURI);
@@ -432,7 +432,7 @@ const SettingsModal = ({ onClose }) => {
     const handleVoiceChange = (e) => {
         const uri = e.target.value;
         setSelectedVoiceURI(uri);
-        localStorage.setItem('kanjicraft_voice_uri', uri);
+        localStorage.setItem('strokes_voice_uri', uri);
 
         // Preview
         window.speechSynthesis.cancel();
@@ -474,7 +474,7 @@ const SettingsModal = ({ onClose }) => {
                     <div>
                         <h4 className="text-sm font-bold text-slate-900 mb-2">About App</h4>
                         <p className="text-slate-600 text-sm leading-relaxed">
-                            KanjiCraft is designed to help you master Japanese handwriting through spaced repetition and stroke order practice.
+                            Strokes is designed to help you master Japanese handwriting through spaced repetition and stroke order practice.
                         </p>
                     </div>
 
@@ -571,7 +571,7 @@ const MenuScreen = ({ modules, launchModule, onViewModule, onStartCustom, userSt
     };
 
     return (
-        <div className="flex-1 flex flex-col items-center p-6 space-y-8 pop-in w-full h-full overflow-hidden relative">
+        <div className="flex-1 flex flex-col items-center p-6 space-y-8 pop-in w-full h-full overflow-y-auto relative">
             {/* Top Right Menu */}
             <div className="absolute top-6 right-6 z-20" ref={dropdownRef}>
                 <button
@@ -663,12 +663,12 @@ const MenuScreen = ({ modules, launchModule, onViewModule, onStartCustom, userSt
             {showSettingsModal && <SettingsModal onClose={() => setShowSettingsModal(false)} />}
 
             <div className="text-center space-y-2 flex-shrink-0 mt-8">
-                <h1 className="text-4xl font-bold text-slate-800">KanjiCraft</h1>
+                <h1 className="text-4xl font-bold text-slate-800">Strokes</h1>
                 <p className="text-slate-500">Learn to write Japanese characters by hand!</p>
             </div>
 
             {/* Hero / Daily Goal Section */}
-            <div className="w-full max-w-sm bg-emerald-500 text-white p-6 rounded-3xl shadow-lg shadow-emerald-200 mb-2 flex items-center justify-between relative overflow-hidden group hover:scale-[1.02] transition-transform cursor-default">
+            <div className="w-full max-w-sm bg-emerald-500 text-white p-6 rounded-3xl shadow-lg shadow-emerald-200 mb-2 flex items-center justify-between relative overflow-hidden group hover:scale-[1.02] transition-transform cursor-default flex-shrink-0">
                 <div className="relative z-10">
                     <div className="text-emerald-100 text-xs font-bold uppercase tracking-wider mb-1">Total Reviews</div>
                     <div className="text-3xl font-bold">{userStats.totalReviews}</div>
@@ -722,7 +722,7 @@ const MenuScreen = ({ modules, launchModule, onViewModule, onStartCustom, userSt
                 </div>
             )}
 
-            <div className="w-full flex-1 overflow-y-auto pr-2">
+            <div className="w-full flex-shrink-0">
                 <div className="flex flex-col gap-4 md:grid md:grid-cols-2 lg:grid-cols-3 md:gap-6 max-w-sm md:max-w-5xl mx-auto pb-6">
                     {modules.map(mod => (
                         <button
@@ -805,7 +805,7 @@ const speak = (text) => {
     const voices = window.speechSynthesis.getVoices();
 
     // 1. Check for User Preference
-    const preferredURI = localStorage.getItem('kanjicraft_voice_uri');
+    const preferredURI = localStorage.getItem('strokes_voice_uri');
     let targetVoice = safeFindVoice(voices, preferredURI);
 
     // 2. If no preference, Force Google Voice (User Request)
